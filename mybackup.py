@@ -6,19 +6,56 @@ Specifications as per 159.251 Software Engineering Design and Construction Assig
 import sys
 import os
 import os.path
-import logger
+import pickle
 
+import logger
 from mkfilesig import create_file_signature
 
 __author__ = 'Sam Hunt'
 
 
 def help_():
-    pass
+    print("myBackup supported commands:\n")
+    print("init")
+    print("\tInitialise an archive directory at '~/Desktop/myArchive'")
+    print("\tIdempotent if archive already exists at location\n")
+    return
 
 
 def init():
-    pass
+    if len(sys.argv) > 2:
+        raise ValueError("Too many arguments: init() takes either 0 arguments.")
+
+    try:
+        # to store whether initialisation was required
+        created = False
+
+        # assert the myArchive folder exists
+        archive_path = os.path.join(os.path.expanduser("~"), "Desktop", "myArchive")
+        if not os.path.exists(archive_path):
+            os.makedirs(archive_path)
+            created = True
+
+        # assert the objects folder within myArchive exists
+        objects_dir = os.path.join(archive_path,"objects")
+        if not os.path.exists(objects_dir):
+            os.makedirs(objects_dir)
+            created = True
+
+        # assert the index dictionary within myArchive exists
+        index_file = os.path.join(archive_path,"index.pkl")
+        if not os.path.exists(index_file):
+            with open(index_file, 'wb') as handle:
+                pickle.dump({}, handle)
+            created = True
+
+        # report on the status of the initialisation
+        print("myArchive", "successfully initialised" if created else "already exists", "at '" + archive_path + "'")
+
+    except OSError:
+        print("Unable to initialise myArchive at", archive_path, "!")
+        sys.exit(1)
+    return
 
 
 def store():
