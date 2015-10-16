@@ -48,8 +48,7 @@ def init():
 
         # assert the index dictionary within myArchive exists
         if not os.path.exists(INDEX_FILE):
-            with open(INDEX_FILE, 'wb') as handle:
-                pickle.dump({}, handle)
+            _save_index({})
             created = True
 
         # report on the status of the initialisation
@@ -70,11 +69,10 @@ def store():
         raise ValueError("'" + sys.argv[2] + "' is not a valid directory!")
 
     # double check archive is initialised
-    check_initialised()
+    _check_initialised()
 
     # load the existing index file from disk
-    with open(INDEX_FILE, 'rb') as handle:
-        index = pickle.load(handle)
+    index = _load_index()
 
     # recursively backup each file in the named directory into archive's objects folder
     already_in_archive_count = 0
@@ -104,8 +102,8 @@ def store():
             index[file_name] = hash_sig
             print("Successfully added file to archive: '" + file_name + "'")
 
-    with open(INDEX_FILE, 'wb') as handle:
-        pickle.dump(index, handle)
+    # update the archive index on disk
+    _save_index(index)
 
     if already_in_archive_count:
         print(already_in_archive_count, "duplicate-named files found in archive and not added!")
@@ -119,15 +117,15 @@ def list_():
         raise ValueError("Too many arguments: list() takes either 0 or 1 arguments.")
 
     # double check archive is initialised
-    check_initialised()
+    _check_initialised()
 
-    # load the existing index file from disk
-    try:
-        with open(INDEX_FILE, 'rb') as handle:
-            index = pickle.load(handle)
-    except IOError:
-        print("Error Loading Index File!")
-        sys.exit(1)
+    # load the existing index from disk
+    index = _load_index()
+
+    # check the archive is not empty
+    if not len(index.keys()):
+        print("Archive is empty")
+        return
 
     # find files matching <pattern>
     count = 0
@@ -137,7 +135,7 @@ def list_():
             print(str(count+1).ljust(4), file_name)
             count += 1
     if not count:
-        print("Archive is empty.")
+        print("No files found matching '" + pattern + "'")
     return
 
 
@@ -156,12 +154,34 @@ def restore():
     pass
 
 
-def check_initialised():
+def _check_initialised():
     if not os.path.exists(ARCHIVE_PATH) or not os.path.exists(OBJECTS_DIR) or not os.path.exists(INDEX_FILE):
         raise RuntimeError("myArchive not initialised @'" + ARCHIVE_PATH + "' !")
 
+
+def _save_index(index_dict):
+    try:
+        with open(INDEX_FILE, 'wb') as handle:
+            pickle.dump(index_dict, handle)
+    except IOError:
+        print("Error saving index file!")
+        sys.exit(1)
+    return
+
+
+def _load_index():
+    try:
+        with open(INDEX_FILE, 'rb') as handle:
+            index_dict = pickle.load(handle)
+    except IOError:
+        print("Error loading index file!")
+        sys.exit(1)
+    return index_dict
+
+
 # TODO: Check logging at correct times as per assignment specification
 # TODO: Update default archive directory from '~/desktop' to '~' on release version
+
 
 if __name__ == '__main__':
 
