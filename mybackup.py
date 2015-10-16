@@ -14,6 +14,10 @@ from mkfilesig import create_file_signature
 
 __author__ = 'Sam Hunt'
 
+ARCHIVE_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "myArchive")
+OBJECTS_DIR = os.path.join(ARCHIVE_PATH,"objects")
+INDEX_FILE = os.path.join(ARCHIVE_PATH,"index.pkl")
+
 
 def help_():
     print("myBackup supported commands:\n")
@@ -33,29 +37,26 @@ def init():
         created = False
 
         # assert the myArchive folder exists
-        archive_path = os.path.join(os.path.expanduser("~"), "Desktop", "myArchive")
-        if not os.path.exists(archive_path):
-            os.makedirs(archive_path)
+        if not os.path.exists(ARCHIVE_PATH):
+            os.makedirs(ARCHIVE_PATH)
             created = True
 
         # assert the objects folder within myArchive exists
-        objects_dir = os.path.join(archive_path,"objects")
-        if not os.path.exists(objects_dir):
-            os.makedirs(objects_dir)
+        if not os.path.exists(OBJECTS_DIR):
+            os.makedirs(OBJECTS_DIR)
             created = True
 
         # assert the index dictionary within myArchive exists
-        index_file = os.path.join(archive_path,"index.pkl")
-        if not os.path.exists(index_file):
-            with open(index_file, 'wb') as handle:
+        if not os.path.exists(INDEX_FILE):
+            with open(INDEX_FILE, 'wb') as handle:
                 pickle.dump({}, handle)
             created = True
 
         # report on the status of the initialisation
-        print("myArchive", "successfully initialised" if created else "already exists", "at '" + archive_path + "'")
+        print("myArchive", "successfully initialised" if created else "already exists", "at '" + ARCHIVE_PATH + "'")
 
     except OSError:
-        print("Unable to initialise myArchive at", archive_path, "!")
+        print("Unable to initialise myArchive at", ARCHIVE_PATH, "!")
         sys.exit(1)
     return
 
@@ -68,15 +69,11 @@ def store():
     if not os.path.exists(sys.argv[2]) or not os.path.isdir(sys.argv[2]):
         raise ValueError("'" + sys.argv[2] + "' is not a valid directory!")
 
-    # double check that the archive is initialised
-    archive_path = os.path.join(os.path.expanduser("~"), "Desktop", "myArchive")
-    objects_dir = os.path.join(archive_path,"objects")
-    index_file = os.path.join(archive_path,"index.pkl")
-    if not os.path.exists(archive_path) or not os.path.exists(objects_dir) or not os.path.exists(index_file):
-        raise RuntimeError("myArchive not initialised @'" + archive_path + "' !")
+    # double check archive is initialised
+    check_initialised()
 
     # load the existing index file from disk
-    with open(index_file, 'rb') as handle:
+    with open(INDEX_FILE, 'rb') as handle:
         index = pickle.load(handle)
 
     # recursively backup each file in the named directory into archive's objects folder
@@ -98,7 +95,7 @@ def store():
 
             # copy and rename the file into the archive
             try:
-                shutil.copyfile(current_file, os.path.join(objects_dir, hash_sig))
+                shutil.copyfile(current_file, os.path.join(OBJECTS_DIR, hash_sig))
             except IOError:
                 print("Failed to add file to archive: '" + file_name + "'")
                 continue
@@ -107,7 +104,7 @@ def store():
             index[file_name] = hash_sig
             print("Successfully added file to archive: '" + file_name + "'")
 
-    with open(index_file, 'wb') as handle:
+    with open(INDEX_FILE, 'wb') as handle:
         pickle.dump(index, handle)
 
     if already_in_archive_count:
@@ -118,8 +115,30 @@ def store():
 
 
 def list_():
-    # TODO: Implement list command
-    pass
+    if len(sys.argv) > 3:
+        raise ValueError("Too many arguments: list() takes either 0 or 1 arguments.")
+
+    # double check archive is initialised
+    check_initialised()
+
+    # load the existing index file from disk
+    try:
+        with open(INDEX_FILE, 'rb') as handle:
+            index = pickle.load(handle)
+    except IOError:
+        print("Error Loading Index File!")
+        sys.exit(1)
+
+    # find files matching <pattern>
+    count = 0
+    pattern = sys.argv[2] if len(sys.argv) == 3 else ""
+    for file_name in index.keys():
+        if pattern in file_name:
+            print(str(count+1).ljust(4), file_name)
+            count += 1
+    if not count:
+        print("Archive is empty.")
+    return
 
 
 def test():
@@ -135,6 +154,11 @@ def get():
 def restore():
     # TODO: Implement restore command
     pass
+
+
+def check_initialised():
+    if not os.path.exists(ARCHIVE_PATH) or not os.path.exists(OBJECTS_DIR) or not os.path.exists(INDEX_FILE):
+        raise RuntimeError("myArchive not initialised @'" + ARCHIVE_PATH + "' !")
 
 # TODO: Check logging at correct times as per assignment specification
 # TODO: Update default archive directory from '~/desktop' to '~' on release version
