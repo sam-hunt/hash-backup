@@ -68,11 +68,8 @@ def store():
     if not os.path.exists(sys.argv[2]) or not os.path.isdir(sys.argv[2]):
         raise ValueError("'" + sys.argv[2] + "' is not a valid directory!")
 
-    # double check archive is initialised
-    _check_initialised()
-
-    # load the existing index file from disk
-    index = _load_index()
+    _check_initialised()    # double check archive is initialised
+    index = _load_index()   # load the existing index file from disk
 
     # recursively backup each file in the named directory into archive's objects folder
     already_in_archive_count = 0
@@ -126,14 +123,9 @@ def list_():
     if len(sys.argv) > 3:
         raise ValueError("Too many arguments: list() takes either 0 or 1 arguments.")
 
-    # double check archive is initialised
-    _check_initialised()
-
-    # load the existing index from disk
-    index = _load_index()
-
-    # check the archive is not empty
-    if not len(index.keys()):
+    _check_initialised()            # double check archive is initialised
+    index = _load_index()           # load the existing index from disk
+    if not len(index.keys()):       # check the archive is not empty
         print("Archive is empty")
         return
 
@@ -142,7 +134,7 @@ def list_():
     pattern = sys.argv[2] if len(sys.argv) == 3 else ""
     for file_name in index.keys():
         if pattern in file_name:
-            print(str(count+1).ljust(4), file_name)
+            print(str(count+1).ljust(4), "'"+file_name+"'")
             count += 1
     if not count:
         print("No files found matching '" + pattern + "'")
@@ -196,8 +188,51 @@ def test():
 
 
 def get():
-    # TODO: Implement get command
-    pass
+    if len(sys.argv) > 3:
+        raise ValueError("Too many arguments: get() takes exactly 1 argument.")
+
+    _check_initialised()            # double check archive is initialised
+    index = _load_index()           # load the existing index from disk
+    if not len(index.keys()):       # check the archive is not empty
+        print("Archive is empty")
+        return
+
+    # find all files in the archive which match the specified pattern
+    pattern = sys.argv[2] if len(sys.argv) == 3 else ""
+    matches = []
+    for file_name in index.keys():
+        if pattern.lower() in file_name.lower():
+            matches.append(file_name)
+    if not len(matches):
+        print("No files found matching pattern: '" + pattern + "'")
+        return
+
+    # select the file to extract
+    if len(matches) == 1:
+        index_to_get = 0
+    else:
+        for count, match in enumerate(matches):
+            if count > 49:
+                break
+            print(str(count+1).ljust(2), match)
+        try:
+            index_to_get = int(input("Please select a file by number from above: "))
+            if not (0 < index_to_get <= 50) or index_to_get > len(matches):
+                raise ValueError("Numeric literal outside of enumerated bounds")
+        except ValueError:
+            print("No file selected, terminating...")
+            return
+        index_to_get -= 1
+
+    # finally extract the selected file
+    try:
+        obj_filename = os.path.join(OBJECTS_DIR, index[matches[index_to_get]])
+        new_filename = os.path.join(os.getcwd(), os.path.split(matches[index_to_get])[-1])
+        shutil.copy(obj_filename, new_filename)
+        print("Successfully extracted file '" + matches[index_to_get] + "' to directory:", os.getcwd())
+    except IOError:
+        print("Failed to extract file '" + matches[index_to_get] + "' to directory: '" + os.getcwd() + "'")
+    return
 
 
 def restore():
