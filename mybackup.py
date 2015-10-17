@@ -329,22 +329,22 @@ def _load_index():
 if __name__ == '__main__':
 
     # the command entered by the user
-    command = hash(sys.argv[1].strip().lower())
+    command = sys.argv[1].strip().lower()
 
     # all commands supported by the program
-    commands = {hash('init'): init,
-                hash('store'): store,
-                hash('list'): list_,
-                hash('test'): test,
-                hash('get'): get,
-                hash('restore'): restore,
-                hash('help'): help_}
+    commands = {'init': init,
+                'store': store,
+                'list': list_,
+                'test': test,
+                'get': get,
+                'restore': restore,
+                'help': help_}
 
     try:
         # ensure the user has entered a supported command
         if command not in commands.keys():
             print("unrecognised command: '" + sys.argv[1] + "'")
-            command = hash('help')
+            command = 'help'
 
         # switch on command
         commands[command]()
