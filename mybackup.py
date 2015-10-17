@@ -77,8 +77,16 @@ def store():
     # recursively backup each file in the named directory into archive's objects folder
     already_in_archive_count = 0
     for dir_path, _, file_names in os.walk(sys.argv[2]):
+
+        # first get the current relative subdirectory
+        relative_subdir = ""
+        for each_subdir in dir_path.split(os.sep)[len(sys.argv[2].split(os.sep))-1:]:
+            relative_subdir = os.path.join(relative_subdir, each_subdir)
+
+        # now store each file in the current subdirectory
         for file_name in file_names:
             current_file = os.path.join(dir_path, file_name)
+            index_filename = os.path.join(relative_subdir, file_name)
 
             # generate the hash object name
             sig = create_file_signature(current_file)
@@ -89,7 +97,7 @@ def store():
 
             # check that a different file with the same name is not already in the archive
             # if it's the same file with same name, then re-adding it can fix inconsistencies found with test()
-            if file_name in index.keys() and index[file_name] != hash_sig:
+            if index_filename in index.keys() and index[index_filename] != hash_sig:
                 already_in_archive_count += 1
                 continue
 
@@ -97,12 +105,12 @@ def store():
             try:
                 shutil.copyfile(current_file, os.path.join(OBJECTS_DIR, hash_sig))
             except IOError:
-                print("Failed to add file to archive: '" + file_name + "'")
+                print("Failed to add file to archive: '" + index_filename + "'")
                 continue
 
             # store the filename and hash in the index
-            index[file_name] = hash_sig
-            print("Successfully added file to archive: '" + file_name + "'")
+            index[index_filename] = hash_sig
+            print("Successfully added file to archive: '" + index_filename + "'")
 
     # update the archive index on disk
     _save_index(index)
