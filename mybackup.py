@@ -14,7 +14,7 @@ from mkfilesig import create_file_signature
 
 __author__ = 'Sam Hunt'
 
-ARCHIVE_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "myArchive")
+ARCHIVE_PATH = os.path.join(os.path.expanduser("~"), "myArchive")
 OBJECTS_DIR = os.path.join(ARCHIVE_PATH,"objects")
 INDEX_FILE = os.path.join(ARCHIVE_PATH,"index.pkl")
 
@@ -126,6 +126,7 @@ def store():
             # copy and rename the file into the archive
             try:
                 shutil.copyfile(current_file, os.path.join(OBJECTS_DIR, hash_sig))
+                logger.logger.info("'" + file_name + "' added to archive")
             except IOError:
                 print("Failed to add file to archive: '" + index_filename + "'")
                 continue
@@ -202,13 +203,20 @@ def test():
     # print the report of consistency test findings
     count = 1
     print("Issue(s) found:", len(bad_files) + len(bad_hashes))
+    logger.logger.info("Beginning archive consistency check...")
     for bad_file in bad_files:
-        print(str(count).ljust(4), "expected file not found in archive:", bad_file)
+        result_line = str(count).ljust(4) + " Expected file not found in archive: '" + bad_file + "'"
+        print(result_line)
+        logger.logger.info(result_line)
         count += 1
     for bad_hash in bad_hashes:
-        print(str(count).ljust(4),"archived file inconsistent or inaccessible:", bad_hash)
+        result_line = str(count).ljust(4) + " Archived file inconsistent with expected sha1 value: '" + bad_hash + "'"
+        print(result_line)
+        logger.logger.info(result_line)
         count += 1
-    print("Total number of consistent files:", consistent_count, "out of expected", len(index))
+    result_line = "Total number of consistent files: " + str(consistent_count) + " out of expected " + str(len(index))
+    print(result_line)
+    logger.logger.info(result_line)
     return
 
 
@@ -307,7 +315,7 @@ def _save_index(index_dict):
         with open(INDEX_FILE, 'wb') as handle:
             pickle.dump(index_dict, handle)
     except IOError:
-        print("Error saving index file!")
+        print("Error saving index file! Please try storing again.")
         sys.exit(1)
     return
 
@@ -320,10 +328,6 @@ def _load_index():
         print("Error loading index file!")
         sys.exit(1)
     return index_dict
-
-
-# TODO: Check logging at correct times as per assignment specification
-# TODO: Update default archive directory from '~/desktop' to '~' on release version
 
 
 if __name__ == '__main__':
@@ -341,6 +345,10 @@ if __name__ == '__main__':
                 'help': help_}
 
     try:
+        # add the logger handler only after ARCHIVE_PATH is defined and archive is initialised
+        if os.path.exists(ARCHIVE_PATH) and os.path.isdir(ARCHIVE_PATH):
+            logger.add_handling(os.path.join(ARCHIVE_PATH, logger.PROGRAM_NAME + '.log'))
+
         # ensure the user has entered a supported command
         if command not in commands.keys():
             print("unrecognised command: '" + sys.argv[1] + "'")
