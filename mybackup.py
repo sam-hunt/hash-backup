@@ -20,11 +20,36 @@ INDEX_FILE = os.path.join(ARCHIVE_PATH,"index.pkl")
 
 
 def help_():
-    print("myBackup supported commands:\n")
-    print("init")
-    print("\tInitialise an archive directory at '~/Desktop/myArchive'")
-    print("\tIdempotent if archive already exists at location\n")
-    # TODO: Add help descriptions for other commands
+    print("myBackup supported commands:")
+    print("init\n"
+          "\tInitialise an archive directory at '~/myArchive'. Idempotent if archive\n"
+          "\talready exists at location.\n")
+
+    print("store <directory>\n"
+          "\tStores all files, subdirectories and subdirectory files from <directory>\n"
+          "\tinto the archive. Files with different names and equal content are only \n"
+          "\tstored once; this is transparent to the user.\n")
+
+    print("list [pattern]\n"
+          "\tDisplays a list of files stored in the archive containing the pattern in \n"
+          "\ttheir filename/subdirectory path. All files stored in the archive are \n"
+          "\tlisted if no text pattern is provided.\n")
+
+    print("test\n"
+          "\tPrints a report on the consistency of files stored in the archive. Checks\n"
+          "\tstored files against those in the index for existence and consistency.\n")
+
+    print("get <filename-or-pattern>\n"
+          "\tRecovers a single file from an archive. Attempts to match the provided\n"
+          "\tfilename/pattern against files in the archive. If only a single match is\n"
+          "\tfound, it is extracted to the current working directory. Otherwise the user\n"
+          "\tis prompted to choose from the first 50 matches.\n")
+
+    print("restore [destination-directory]\n"
+          "\tRestore all files/directories in the archive into the provided destination\n"
+          "\tdirectory. The original subdirectory structure of stored files is \n"
+          "\tmaintained. If no destination directory is provided, the current working\n"
+          "\tdirectory is assumed.\n")
     return
 
 
@@ -315,12 +340,18 @@ if __name__ == '__main__':
                 hash('restore'): restore,
                 hash('help'): help_}
 
-    # ensure the user has entered a supported command
-    if command not in commands.keys():
-        raise ValueError("command must be one of 'help', 'init', 'store', 'list', 'test', 'get', 'restore'")
+    try:
+        # ensure the user has entered a supported command
+        if command not in commands.keys():
+            print("unrecognised command: '" + sys.argv[1] + "'")
+            command = hash('help')
 
-    # switch on command
-    commands[command]()
+        # switch on command
+        commands[command]()
+
+    except (ValueError, RuntimeError) as e:
+        print("Command '" + sys.argv[1] + "' failed!:\t", e)
+        sys.exit(1)
 
     # return execution to os
     sys.exit(0)
