@@ -65,7 +65,7 @@ def store():
         raise ValueError("Too many arguments: store() takes exactly 1 argument.")
 
     # check that the supplied directory name is actually a valid directory
-    if not os.path.exists(sys.argv[2]) or not os.path.isdir(sys.argv[2]):
+    if not os.path.exists(sys.argv[2]) and not os.path.isdir(sys.argv[2]):
         raise ValueError("'" + sys.argv[2] + "' is not a valid directory!")
 
     _check_initialised()    # double check archive is initialised
@@ -88,7 +88,7 @@ def store():
             # generate the hash object name
             sig = create_file_signature(current_file)
             if sig is None:
-                print("unable to access file: '" + current_file + "' !")
+                print("Unable to access file: '" + current_file + "' !")
                 continue
             _, _, hash_sig = sig
 
@@ -113,7 +113,7 @@ def store():
     _save_index(index)
 
     if already_in_archive_count:
-        print("duplicate-named different-content files found in archive and not added:", already_in_archive_count, "!")
+        print("Duplicate-named different-content files found in archive and not added:", already_in_archive_count, "!")
     else:
         print("No duplicate-named different-content files found, all files added to archive")
     return
@@ -176,14 +176,14 @@ def test():
 
     # print the report of consistency test findings
     count = 1
-    print("issue(s) found:", len(bad_files) + len(bad_hashes))
+    print("Issue(s) found:", len(bad_files) + len(bad_hashes))
     for bad_file in bad_files:
         print(str(count).ljust(4), "expected file not found in archive:", bad_file)
         count += 1
     for bad_hash in bad_hashes:
         print(str(count).ljust(4),"archived file inconsistent or inaccessible:", bad_hash)
         count += 1
-    print("total number of consistent files:", consistent_count, "out of expected", len(index))
+    print("Total number of consistent files:", consistent_count, "out of expected", len(index))
     return
 
 
@@ -193,7 +193,7 @@ def get():
 
     _check_initialised()            # double check archive is initialised
     index = _load_index()           # load the existing index from disk
-    if not len(index.keys()):       # check the archive is not empty
+    if not len(index):       # check the archive is not empty
         print("Archive is empty")
         return
 
@@ -236,8 +236,40 @@ def get():
 
 
 def restore():
-    # TODO: Implement restore command
-    pass
+    if len(sys.argv) > 3:
+        raise ValueError("Too many arguments: restore() takes exactly 1 argument.")
+
+    # check and set the directory to restore the archive into
+    if len(sys.argv) == 3 and (not os.path.exists(sys.argv[2]) and not os.path.isdir(sys.argv[2])):
+        raise ValueError("'" + sys.argv[2] + "' is not a valid directory!")
+    directory = sys.argv[2] if len(sys.argv) == 3 else os.getcwd()
+
+    _check_initialised()    # double check archive is initialised
+    index = _load_index()   # load the existing index file from disk
+
+    succeeded_count = 0
+    for each_file_name in index.keys():
+
+        try:
+            # Ensure the subdirectory structure exists
+            current_sub_dir = directory
+            for each_sub_dir in os.path.split(each_file_name)[:-1]:
+                current_sub_dir = os.path.join(current_sub_dir, each_sub_dir)
+            os.makedirs(os.path.join(directory, current_sub_dir), exist_ok=True)
+
+            # Extract the current file
+            obj_filename = os.path.join(OBJECTS_DIR, index[each_file_name])
+            new_filename = os.path.join(directory, each_file_name)
+            shutil.copy(obj_filename, new_filename)
+            succeeded_count += 1
+        except IOError:
+            continue
+
+    if succeeded_count == len(index):
+        print("All", succeeded_count, "files successfully restored to '" + directory + "'")
+    else:
+        print("Total number of restored files:", succeeded_count, "out of expected", len(index))
+    return
 
 
 def _check_initialised():
