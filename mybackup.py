@@ -80,16 +80,18 @@ def store():
         for file_name in file_names:
             current_file = os.path.join(dir_path, file_name)
 
-            # check that the file is not already in the archive
-            if file_name in index.keys():
-                already_in_archive_count += 1
-                continue
-
+            # generate the hash object name
             sig = create_file_signature(current_file)
             if sig is None:
                 print("unable to access file: '" + current_file + "' !")
                 continue
             _, _, hash_sig = sig
+
+            # check that a different file with the same name is not already in the archive
+            # if it's the same file with same name, then re-adding it can fix inconsistencies found with test()
+            if file_name in index.keys() and index[file_name] != hash_sig:
+                already_in_archive_count += 1
+                continue
 
             # copy and rename the file into the archive
             try:
@@ -106,9 +108,9 @@ def store():
     _save_index(index)
 
     if already_in_archive_count:
-        print(already_in_archive_count, "duplicate-named files found in archive and not added!")
+        print("duplicate-named different-content files found in archive and not added:", already_in_archive_count, "!")
     else:
-        print("No duplicate-named files found, all files added to archive")
+        print("No duplicate-named different-content files found, all files added to archive")
     return
 
 
@@ -140,8 +142,49 @@ def list_():
 
 
 def test():
-    # TODO: Implement test command
-    pass
+    if len(sys.argv) > 2:
+        raise ValueError("Too many arguments: test() takes exactly 0 arguments.")
+
+    # double check the archive is initialised
+    _check_initialised()
+
+    # load the index file from disk
+    index = _load_index()
+
+    # check the consistency of the index and objects
+    bad_files, bad_hashes, consistent_count = [], [], 0
+    for file_name, hash_name in index.items():
+
+        # check that a hash object matches the filename
+        hash_path = os.path.join(OBJECTS_DIR, hash_name)
+        if not os.path.exists(hash_path):
+            bad_files.append(file_name)
+            continue
+
+        # check that the hash object is consistent
+        sig = create_file_signature(hash_path)
+        if sig is None:
+            bad_hashes.append(hash_name)
+            continue
+        _, _, hash_sig = sig
+        if hash_sig != hash_name:
+            bad_hashes.append(hash_name)
+            continue
+
+        # update the consistent items count
+        consistent_count += 1
+
+    # print the report of consistency test findings
+    count = 1
+    print("issue(s) found:", len(bad_files) + len(bad_hashes))
+    for bad_file in bad_files:
+        print(str(count).ljust(4), "expected file not found in archive:", bad_file)
+        count += 1
+    for bad_hash in bad_hashes:
+        print(str(count).ljust(4),"archived file inconsistent or inaccessible:", bad_hash)
+        count += 1
+    print("total number of consistent files:", consistent_count, "out of expected", len(index))
+    return
 
 
 def get():
