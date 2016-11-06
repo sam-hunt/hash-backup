@@ -1,16 +1,13 @@
-# myBackup Readme!
+# hash-backup
 
-###Member information###
+A command line tool to backup and restore directories.
 
- * number of members: 1
- * member name: **Samuel Hunt**
- * member ID: **14216618**
+###Migrated from bitbucket:###
  * bitbucket user: [s14216618](https://bitbucket.org/s14216618/)
  * repo name: [251-A2-Hunt-Sam](https://bitbucket.org/s14216618/251-a2-hunt-sam)
 
 
 ###How to run the program###
-
  1. Run from the command line e.g. _**'"Python" "mybackup.py" "Command" "Argument"'**_ where:
     * _**"Python"**_ is your local installed version of Python 3.4 (I used Anaconda)
     * _**"mybackup.py"**_ is the absolute or relative path to my program's main module on your machine
@@ -35,7 +32,6 @@
 
  6. Init should be used before other commands, however ignoring this will just prompt you to do this
 
-
 ###Folders###
  * The program consists of 3 modules: mybackup.py, mkfilsig.py, and logger.py
 
@@ -49,37 +45,23 @@
 
  * The program will tell you where it outputs files (current working directory etc) if you don't specify an optional one
 
-
 ###Interesting commits (?)###
  * [b437596](https://bitbucket.org/s14216618/251-a2-hunt-sam/commits/b437596701ed078cf20cc464227d877a2accca11) **test command implemented.**    
-   I also made changes to the store function so that re-adding inconsistent files will fix them.   
+   Re-adding inconsistent files will fix them.   
 
  * [a045525](https://bitbucket.org/s14216618/251-a2-hunt-sam/commits/a04552535d790dc28fdcf8b896cf90ef87c69ea0) **restore command implemented.**    
-   Code is clean, succinct and functional.   
-
- * Disclaimer: as was similarly mentioned on the discussion forum, I also decided to break my commits into much smaller  
-   chunks, so that rollback would be easier should it be required, and so that individual commits were more focused on   
-   particular features. Anyway I did all of the work so it must count as a 'significant chunk' haha      
-
- * Also as I was working alone, I chose to just use the single master branch for commits. The reason for this was that alone the work is largely linear,    
-   and I didn't think it would simplify the audit trail by have lots of commits across multiple branches for small bug fixes on a solo project.
-
+   Code is relatively clean, succinct and functional.   
 
 ###Notable features###
-*  My descriptive help function.      
+*  Descriptive help function.      
 *  Switch construct in main rather than if-else ladder.      
 *  Re-adding inconsistent files fixes them.      
 *  Invalid commands reroutes to help.      
-*  Many exceptions are instead handled further up the stack in main.     
+*  Most exceptions are handled further up the call-stack in main instead.     
 
 
 ###Future Improvements###
 
-I would further improve the program by making the ARCHIVE_PATH variable rather than hard-coded and storing the path in a     
-text file in the program folder etc.
-Also adding compression using python's gzip lib functinos before hashing would make it more useful as a backup program,    
-although you would have to ensure that the specific algorithm used isn't likely to become deprecated/removed anytime soon      
-rendering all backups unrecoverable in newer python versions...     
+The ARCHIVE_PATH should be variable rather than hard-coded. This could be handled as an additional command-line parameter.
 
-Thanks for taking the time to read my readme and mark my assignment.   
-Cheers, Sam
+Python's gzip library implementation 'gz' could be used to save space by compressing backed up files.
