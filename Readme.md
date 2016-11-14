@@ -46,10 +46,10 @@ A command line tool to backup and restore directories.
  * The program will tell you where it outputs files (current working directory etc) if you don't specify an optional one
 
 ###Interesting commits (?)###
- * [b437596](https://bitbucket.org/s14216618/251-a2-hunt-sam/commits/b437596701ed078cf20cc464227d877a2accca11) **test command implemented.**    
+ * [b437596](/../../commit/b437596701ed078cf20cc464227d877a2accca11) **test command implemented.**    
    Re-adding inconsistent files will fix them.   
 
- * [a045525](https://bitbucket.org/s14216618/251-a2-hunt-sam/commits/a04552535d790dc28fdcf8b896cf90ef87c69ea0) **restore command implemented.**    
+ * [a045525](/../../commit/a04552535d790dc28fdcf8b896cf90ef87c69ea0) **restore command implemented.**    
    Code is relatively clean, succinct and functional.   
 
 ###Notable features###
